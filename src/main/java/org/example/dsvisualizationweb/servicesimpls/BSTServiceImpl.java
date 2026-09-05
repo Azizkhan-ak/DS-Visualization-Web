@@ -27,6 +27,37 @@ public class BSTServiceImpl implements BinaryTreeService {
     @Override
     public TreeResponse insert(int value) {
         // TODO: recursively find correct position and insert
+
+        if(root == null){
+            this.root = new TreeNode(value);
+            size++;
+            return buildResponse("Inserted " + value);
+        }
+
+        TreeNode node = root;
+
+        while (true){ // keep iterating untill both childs are null
+            if(value < node.value){
+                if(node.left == null){
+                    node.left = new TreeNode(value);
+                    size++;
+                    break;
+                }
+                node = node.left;
+            }
+            else if(value > node.value){
+                if(node.right == null){
+                    node.right = new TreeNode(value);
+                    size++;
+                    break;
+                }
+                node = node.right;
+            }
+            else{
+                return buildResponse("Value already Exists, No duplicates allwoed!");
+            }
+        }
+
         return buildResponse("Inserted " + value);
     }
 
@@ -91,7 +122,13 @@ public class BSTServiceImpl implements BinaryTreeService {
     }
 
     private void inorderTraversal(TreeNode node, List<Integer> result) {
-        // TODO
+
+        if(node == null)
+            return;
+
+        inorderTraversal(node.left,result);
+        result.add(node.value);
+        inorderTraversal(node.right,result);
     }
 
     @Override
@@ -106,6 +143,13 @@ public class BSTServiceImpl implements BinaryTreeService {
 
     private void preorderTraversal(TreeNode node, List<Integer> result) {
         // TODO
+
+        if(node == null)
+            return;
+
+        result.add(node.value);
+        preorderTraversal(node.left,result);
+        preorderTraversal(node.right,result);
     }
 
     @Override
@@ -120,6 +164,13 @@ public class BSTServiceImpl implements BinaryTreeService {
 
     private void postorderTraversal(TreeNode node, List<Integer> result) {
         // TODO
+
+        if(node == null)
+            return ;
+
+        postorderTraversal(node.left,result);
+        postorderTraversal(node.right,result);
+        result.add(node.value);
     }
 
     @Override
