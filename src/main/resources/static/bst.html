@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS Visualizer — BST</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header / Nav ── */
+        header {
+            background: #1a1d27;
+            border-bottom: 1px solid #2e3247;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            height: 48px;
+        }
+        .logo { font-size: 1rem; font-weight: 600; color: #c9d1ff; margin-right: 24px; }
+        .nav-tab {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #5a6080;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s;
+        }
+        .nav-tab:hover { color: #a0a8d0; }
+        .nav-tab.active { color: #8899ff; border-bottom-color: #5c6bc0; }
+
+        /* ── Layout ── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 48px);
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: #1a1d27;
+            border-right: 1px solid #2e3247;
+            padding: 14px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .op-card { border: 1px solid #2e3247; border-radius: 8px; overflow: hidden; }
+        .op-card-header {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid #2e3247;
+        }
+        .op-card-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+        .card-insert .op-card-header { background: #0d2016; color: #4ade80; }
+        .card-insert { border-color: #1e4d2b; }
+        .card-delete .op-card-header { background: #200d0d; color: #f87171; }
+        .card-delete { border-color: #4d1e1e; }
+        .card-search .op-card-header { background: #0d1420; color: #60a5fa; }
+        .card-search { border-color: #1e2e4d; }
+        .card-traversal .op-card-header { background: #1a1220; color: #c084fc; }
+        .card-traversal { border-color: #3a1e5c; }
+
+        .field { display: flex; flex-direction: column; gap: 3px; }
+        .field label { font-size: 0.65rem; color: #5a6080; }
+
+        input[type="number"] {
+            background: #0f1117; border: 1px solid #2e3247; color: #e0e0e0;
+            padding: 6px 8px; border-radius: 5px; font-size: 0.82rem; width: 100%;
+            transition: border-color 0.15s;
+        }
+        input[type="number"]:focus { outline: none; border-color: #5c6bc0; }
+        input.error { border-color: #f87171 !important; animation: shake 0.3s ease; }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); }
+        }
+        input::placeholder { color: #3a4060; }
+
+        .btn {
+            width: 100%; padding: 7px 10px; border: none; border-radius: 5px;
+            font-size: 0.78rem; font-weight: 500; cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.82; }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-insert   { background: #1e4d2b; color: #4ade80; border: 1px solid #2d6b3e; }
+        .btn-delete   { background: #4d1e1e; color: #f87171; border: 1px solid #6b2d2d; }
+        .btn-search   { background: #1e2e4d; color: #60a5fa; border: 1px solid #2d3e6b; }
+        .btn-traversal{ background: #2a1e4d; color: #c084fc; border: 1px solid #4a2e7a; }
+        .btn-danger   { background: #4d1e3a; color: #f472b6; border: 1px solid #6b2d4e; }
+        .btn-todo     { background: #1e1e1e; color: #444; border: 1px solid #2e2e2e; cursor: not-allowed; }
+
+        .todo-note { font-size: 0.62rem; color: #444; font-style: italic; text-align: center; }
+
+        /* ── Main ── */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Stats */
+        .stats-bar { display: flex; gap: 10px; padding: 14px 24px 0; }
+        .stat {
+            background: #1a1d27; border: 1px solid #2e3247; border-radius: 8px;
+            padding: 8px 18px; text-align: center; min-width: 70px;
+        }
+        .stat-val { font-size: 1.3rem; font-weight: 700; color: #8899ff; }
+        .stat-key { font-size: 0.65rem; color: #5a6080; margin-top: 1px; }
+
+        /* Message */
+        .msg-bar {
+            margin: 10px 24px 0;
+            background: #1a1d27; border: 1px solid #2e3247; border-left: 3px solid #5c6bc0;
+            border-radius: 6px; padding: 8px 14px; font-size: 0.82rem; color: #a0a8d0; transition: all 0.25s;
+        }
+        .msg-bar.success { border-left-color: #4ade80; color: #4ade80; background: #0d2016; }
+        .msg-bar.error   { border-left-color: #f87171; color: #f87171; background: #200d0d; }
+        .msg-bar.info    { border-left-color: #60a5fa; color: #60a5fa; background: #0d1420; }
+        .msg-bar.purple  { border-left-color: #c084fc; color: #c084fc; background: #1a0d2e; }
+
+        /* Tree canvas */
+        .tree-area {
+            flex: 1; padding: 16px 24px 0; overflow: auto; position: relative;
+        }
+        .tree-empty {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; color: #3a4060; font-size: 0.85rem; font-style: italic;
+            border: 1px dashed #2e3247; border-radius: 10px; margin-bottom: 16px;
+        }
+        #tree-svg { display: block; }
+
+        /* SVG node styling */
+        .tree-node-circle {
+            fill: #1e2236; stroke: #3a3f60; stroke-width: 1.5;
+            transition: fill 0.25s, stroke 0.25s, filter 0.25s;
+        }
+        .tree-node-circle.root-n  { stroke: #8899ff; }
+        .tree-node-circle.found   { fill: #0d2016; stroke: #4ade80; }
+
+        /* Traversal animation states */
+        .tree-node-circle.visiting {
+            fill: #facc15 !important;
+            stroke: #fde047 !important;
+            stroke-width: 2.5 !important;
+            filter: drop-shadow(0 0 8px #facc15);
+        }
+        .tree-node-text.visiting  { fill: #1a1400 !important; font-weight: 700 !important; }
+        .tree-node-circle.visited {
+            fill: #2a1e4d !important;
+            stroke: #c084fc !important;
+            stroke-width: 2 !important;
+        }
+        .tree-node-text.visited   { fill: #c084fc !important; }
+
+        .tree-node-text { fill: #c9d1ff; font-size: 13px; font-weight: 600; font-family: 'Segoe UI', sans-serif; transition: fill 0.25s; }
+        .tree-edge { stroke: #2e3247; stroke-width: 1.5; }
+
+        /* Traversal result */
+        .traversal-bar {
+            margin: 8px 24px 0;
+            background: #1a0d2e; border: 1px solid #3a1e5c; border-radius: 6px;
+            padding: 8px 14px; font-size: 0.8rem; color: #c084fc;
+            display: none; flex-wrap: wrap; gap: 4px; align-items: center;
+        }
+        .traversal-bar.visible { display: flex; }
+        .traversal-label { font-size: 0.65rem; color: #7a5a9a; margin-right: 4px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+        .t-val {
+            background: #2a1e4d; border: 1px solid #4a2e7a; border-radius: 4px;
+            padding: 2px 8px; color: #c084fc; font-weight: 600; opacity: 0.3;
+            transition: opacity 0.2s, background 0.2s, border-color 0.2s;
+        }
+        .t-val.active  { opacity: 1; background: #facc15; border-color: #fde047; color: #1a1400; }
+        .t-val.done    { opacity: 1; }
+        .t-arrow { color: #4a2e7a; opacity: 0.4; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+        /* Speed control */
+        .speed-row {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.65rem; color: #5a6080; margin-top: 4px;
+        }
+        input[type="range"] { flex: 1; accent-color: #5c6bc0; height: 3px; }
+
+        /* History */
+        .history-panel {
+            border-top: 1px solid #2e3247; padding: 0 24px;
+            max-height: 120px; overflow: hidden; display: flex; flex-direction: column;
+        }
+        .history-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 7px 0 5px; cursor: pointer; user-select: none;
+        }
+        .history-header span { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6080; }
+        .history-toggle { font-size: 0.65rem; color: #3a4060; }
+        .history-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 3px; padding-bottom: 8px; }
+        .history-item { display: flex; align-items: baseline; gap: 8px; font-size: 0.75rem; animation: fadeIn 0.2s ease; }
+        .history-time { color: #3a4060; font-size: 0.65rem; min-width: 42px; }
+        .history-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; }
+        .history-dot.success { background: #4ade80; }
+        .history-dot.error   { background: #f87171; }
+        .history-dot.info    { background: #60a5fa; }
+        .history-dot.purple  { background: #c084fc; }
+        .history-text { color: #a0a8d0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <span class="logo">DS Visualizer</span>
+    <a href="/index.html" class="nav-tab">Linked List</a>
+    <a href="/bst.html"   class="nav-tab active">BST</a>
+    <a href="/avl.html"   class="nav-tab" style="color:#3a4060;cursor:default;">AVL</a>
+    <a href="/rbtree.html" class="nav-tab" style="color:#3a4060;cursor:default;">Red-Black</a>
+</header>
+
+<div class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+        <div class="op-card card-insert">
+            <div class="op-card-header">Insert</div>
+            <div class="op-card-body">
+                <div class="field">
+                    <label>Value</label>
+                    <input id="inp-val" type="number" placeholder="e.g. 42" onkeydown="if(event.key==='Enter')api('insert')">
+                </div>
+                <button class="btn btn-insert" onclick="api('insert')">Insert</button>
+            </div>
+        </div>
+
+        <div class="op-card card-delete">
+            <div class="op-card-header">Delete</div>
+            <div class="op-card-body">
+                <div class="field">
+                    <label>Value</label>
+                    <input id="del-val" type="number" placeholder="e.g. 42" disabled style="opacity:0.4;">
+                </div>
+                <button class="btn btn-todo" disabled>Delete (coming soon)</button>
+                <div class="todo-note">Implement deleteNode first</div>
+            </div>
+        </div>
+
+        <div class="op-card card-search">
+            <div class="op-card-header">Search</div>
+            <div class="op-card-body">
+                <div class="field">
+                    <label>Value</label>
+                    <input id="search-val" type="number" placeholder="e.g. 42" disabled style="opacity:0.4;">
+                </div>
+                <button class="btn btn-todo" disabled>Search (coming soon)</button>
+                <div class="todo-note">Implement searchNode first</div>
+            </div>
+        </div>
+
+        <div class="op-card card-traversal">
+            <div class="op-card-header">Traversals</div>
+            <div class="op-card-body">
+                <button class="btn btn-traversal" onclick="api('inorder')">Inorder (sorted)</button>
+                <button class="btn btn-traversal" onclick="api('preorder')">Preorder</button>
+                <button class="btn btn-traversal" onclick="api('postorder')">Postorder</button>
+                <button class="btn btn-todo" disabled>Level-order (coming soon)</button>
+                <div class="speed-row">
+                    <span>Speed</span>
+                    <input type="range" id="speed" min="100" max="1200" value="600" step="100">
+                    <span id="speed-label">0.6s</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-danger" style="margin-top:4px;" onclick="api('clear')">Clear Tree</button>
+
+        <!-- Quick fill -->
+        <div style="border-top:1px solid #2e3247;padding-top:8px;display:flex;flex-direction:column;gap:4px;">
+            <div style="font-size:0.65rem;color:#5a6080;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">Quick Fill</div>
+            <button class="btn btn-insert" style="opacity:0.7;" onclick="quickFill([10,5,20,3,7,15,30])">Balanced (7 nodes)</button>
+            <button class="btn btn-insert" style="opacity:0.7;" onclick="quickFill([5,4,3,2,1])">Skewed left</button>
+            <button class="btn btn-insert" style="opacity:0.7;" onclick="quickFillRandom()">Random ×7</button>
+        </div>
+
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <div class="stats-bar">
+            <div class="stat"><div class="stat-val" id="stat-size">0</div><div class="stat-key">Size</div></div>
+            <div class="stat"><div class="stat-val" id="stat-height">0</div><div class="stat-key">Height</div></div>
+            <div class="stat"><div class="stat-val" id="stat-root">—</div><div class="stat-key">Root</div></div>
+        </div>
+
+        <div class="msg-bar info" id="msg-bar">Ready — insert values or use Quick Fill.</div>
+
+        <div class="traversal-bar" id="traversal-bar"></div>
+
+        <div class="tree-area" id="tree-area">
+            <div class="tree-empty" id="tree-empty">Tree is empty — insert a value or use Quick Fill.</div>
+            <svg id="tree-svg" style="display:none;"></svg>
+        </div>
+
+        <div class="history-panel">
+            <div class="history-header" onclick="toggleHistory()">
+                <span>Operation History</span>
+                <span class="history-toggle" id="hist-toggle">▲ hide</span>
+            </div>
+            <div class="history-list" id="history-list"></div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    const BASE = '/api/bst';
+    const NODE_R = 22;
+    const LEVEL_H = 80;
+    const H_GAP = 56;
+
+    // nodeMap: value → { circle, text } — built during render, used for traversal highlighting
+    let nodeMap = {};
+    let traversalTimer = null;
+
+    // ── Speed control ──
+    const speedSlider = document.getElementById('speed');
+    const speedLabel  = document.getElementById('speed-label');
+    speedSlider.addEventListener('input', () => {
+        speedLabel.textContent = (speedSlider.value / 1000).toFixed(1) + 's';
+    });
+    function getSpeed() { return parseInt(speedSlider.value); }
+
+    // ── API ──
+    async function callApi(url, method, body) {
+        const opts = { method, headers: {} };
+        if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        const res = await fetch(url, opts);
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        return res.json();
+    }
+
+    function getInt(id) {
+        const el = document.getElementById(id);
+        const v = parseInt(el.value);
+        if (isNaN(v)) {
+            el.classList.add('error');
+            el.focus();
+            setTimeout(() => el.classList.remove('error'), 600);
+            throw new Error('missing');
+        }
+        return v;
+    }
+
+    async function api(action) {
+        cancelTraversal();
+        try {
+            let data, histMsg, msgType = 'success';
+
+            switch (action) {
+                case 'insert': {
+                    const v = getInt('inp-val');
+                    data = await callApi(`${BASE}/insert`, 'POST', { value: v });
+                    histMsg = `Insert ${v}`;
+                    break;
+                }
+                case 'clear':
+                    data = await callApi(`${BASE}/clear`, 'DELETE');
+                    histMsg = 'Clear tree';
+                    break;
+                case 'inorder':
+                    data = await callApi(`${BASE}/traversal/inorder`, 'GET');
+                    render(data);
+                    animateTraversal('Inorder', data.inorder);
+                    histMsg = `Inorder → [${data.inorder?.join(', ')}]`;
+                    showMsg(`Inorder traversal — watch the nodes light up in order`, 'purple');
+                    addHistory(histMsg, 'purple');
+                    return;
+                case 'preorder':
+                    data = await callApi(`${BASE}/traversal/preorder`, 'GET');
+                    render(data);
+                    animateTraversal('Preorder', data.preorder);
+                    histMsg = `Preorder → [${data.preorder?.join(', ')}]`;
+                    showMsg(`Preorder traversal — Root first, then children`, 'purple');
+                    addHistory(histMsg, 'purple');
+                    return;
+                case 'postorder':
+                    data = await callApi(`${BASE}/traversal/postorder`, 'GET');
+                    render(data);
+                    animateTraversal('Postorder', data.postorder);
+                    histMsg = `Postorder → [${data.postorder?.join(', ')}]`;
+                    showMsg(`Postorder traversal — Children before parent`, 'purple');
+                    addHistory(histMsg, 'purple');
+                    return;
+            }
+
+            const type = resolveType(data.message, msgType);
+            showMsg(data.message, type);
+            addHistory(histMsg + ' → ' + data.message, type);
+            render(data);
+
+        } catch (e) {
+            if (e.message === 'missing') return;
+            showMsg('Cannot reach server. Is Spring Boot running on :8080?', 'error');
+        }
+    }
+
+    // ── Quick Fill ──
+    async function quickFill(values) {
+        cancelTraversal();
+        await callApi(`${BASE}/clear`, 'DELETE');
+        for (const v of values) await callApi(`${BASE}/insert`, 'POST', { value: v });
+        const data = await callApi(`${BASE}/state`, 'GET');
+        render(data);
+        showMsg(`Quick filled with [${values.join(', ')}]`, 'success');
+        addHistory(`Quick fill → [${values.join(', ')}]`, 'info');
+    }
+
+    async function quickFillRandom() {
+        const pool = Array.from({length: 30}, (_,i) => i*3+5);
+        const shuffled = pool.sort(() => Math.random()-0.5).slice(0,7);
+        await quickFill(shuffled);
+    }
+
+    // ── Traversal Animation ──
+    function animateTraversal(label, values) {
+        if (!values || values.length === 0) return;
+
+        const bar = document.getElementById('traversal-bar');
+        bar.innerHTML = `<span class="traversal-label">${label}:</span>`;
+
+        // Build chips upfront — all dim
+        const chips = values.map((v, i) => {
+            const chip = document.createElement('span');
+            chip.className = 't-val';
+            chip.textContent = v;
+            bar.appendChild(chip);
+            if (i < values.length - 1) {
+                const arr = document.createElement('span');
+                arr.className = 't-arrow';
+                arr.textContent = '→';
+                bar.appendChild(arr);
+            }
+            return chip;
+        });
+        bar.classList.add('visible');
+
+        const speed = getSpeed();
+        let step = 0;
+
+        function tick() {
+            if (step > 0) {
+                // Mark previous as visited
+                const prev = values[step - 1];
+                const prevEntry = nodeMap[prev];
+                if (prevEntry) {
+                    prevEntry.circle.classList.remove('visiting');
+                    prevEntry.circle.classList.add('visited');
+                    prevEntry.text.classList.remove('visiting');
+                    prevEntry.text.classList.add('visited');
+                }
+                chips[step - 1].classList.remove('active');
+                chips[step - 1].classList.add('done');
+            }
+
+            if (step >= values.length) {
+                traversalTimer = null;
+                showMsg(`${label} complete: [${values.join(' → ')}]`, 'purple');
+                return;
+            }
+
+            // Highlight current node
+            const cur = values[step];
+            const entry = nodeMap[cur];
+            if (entry) {
+                entry.circle.classList.add('visiting');
+                entry.text.classList.add('visiting');
+            }
+            chips[step].classList.add('active');
+            // Scroll chip into view
+            chips[step].scrollIntoView({ inline: 'nearest', behavior: 'smooth' });
+
+            step++;
+            traversalTimer = setTimeout(tick, speed);
+        }
+
+        tick();
+    }
+
+    function cancelTraversal() {
+        if (traversalTimer) { clearTimeout(traversalTimer); traversalTimer = null; }
+        // Reset all node states
+        Object.values(nodeMap).forEach(({ circle, text }) => {
+            circle.classList.remove('visiting', 'visited');
+            text.classList.remove('visiting', 'visited');
+        });
+        document.getElementById('traversal-bar').classList.remove('visible');
+    }
+
+    // ── Message ──
+    function resolveType(msg, fallback) {
+        if (!msg) return fallback;
+        const m = msg.toLowerCase();
+        if (m.includes('already') || m.includes('not found') || m.includes('empty')) return 'error';
+        return fallback || 'success';
+    }
+    function showMsg(text, type = 'info') {
+        const el = document.getElementById('msg-bar');
+        el.textContent = text;
+        el.className = 'msg-bar ' + type;
+    }
+
+    // ── History ──
+    function addHistory(text, type) {
+        const list = document.getElementById('history-list');
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-US', {hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `<span class="history-time">${time}</span><div class="history-dot ${type}"></div><span class="history-text">${text}</span>`;
+        list.prepend(item);
+        while (list.children.length > 20) list.removeChild(list.lastChild);
+    }
+    function toggleHistory() {
+        const list = document.getElementById('history-list');
+        const tog = document.getElementById('hist-toggle');
+        const open = list.style.display !== 'none';
+        list.style.display = open ? 'none' : '';
+        tog.textContent = open ? '▼ show' : '▲ hide';
+    }
+
+    // ── Tree Layout ──
+    function layoutTree(root) {
+        if (!root) return { nodes: [], edges: [], svgW: 0, svgH: 0 };
+        let rank = 0;
+        function assignRank(node, depth) {
+            if (!node) return;
+            assignRank(node.left, depth + 1);
+            node._rank = rank++;
+            node._depth = depth;
+            assignRank(node.right, depth + 1);
+        }
+        assignRank(root, 0);
+        const nodes = [], edges = [];
+        function collect(node, parentX, parentY) {
+            if (!node) return;
+            const x = node._rank * H_GAP + H_GAP;
+            const y = node._depth * LEVEL_H + NODE_R + 24;
+            if (parentX !== null) edges.push({ x1: parentX, y1: parentY, x2: x, y2: y });
+            nodes.push({ x, y, value: node.value, depth: node._depth });
+            collect(node.left, x, y);
+            collect(node.right, x, y);
+        }
+        collect(root, null, null);
+        const svgW = rank * H_GAP + H_GAP;
+        const maxDepth = Math.max(...nodes.map(n => n.depth));
+        const svgH = (maxDepth + 1) * LEVEL_H + NODE_R + 32;
+        return { nodes, edges, svgW, svgH };
+    }
+
+    // ── Render ──
+    function render(data) {
+        document.getElementById('stat-size').textContent   = data.size   ?? 0;
+        document.getElementById('stat-height').textContent = data.height ?? 0;
+        document.getElementById('stat-root').textContent   = data.root ? data.root.value : '—';
+
+        const empty = document.getElementById('tree-empty');
+        const svg   = document.getElementById('tree-svg');
+        nodeMap = {}; // reset node map on every render
+
+        if (!data.root) {
+            empty.style.display = 'flex';
+            svg.style.display   = 'none';
+            return;
+        }
+
+        empty.style.display = 'none';
+        svg.style.display   = 'block';
+
+        const { nodes, edges, svgW, svgH } = layoutTree(data.root);
+        svg.setAttribute('width',   svgW);
+        svg.setAttribute('height',  svgH);
+        svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+        svg.innerHTML = '';
+
+        // Edges first
+        edges.forEach(e => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', e.x1); line.setAttribute('y1', e.y1);
+            line.setAttribute('x2', e.x2); line.setAttribute('y2', e.y2);
+            line.setAttribute('class', 'tree-edge');
+            svg.appendChild(line);
+        });
+
+        // Nodes on top
+        nodes.forEach((n, i) => {
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.style.animation = `nodeIn 0.3s ease ${i*30}ms both`;
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', NODE_R);
+            circle.setAttribute('class', 'tree-node-circle' + (n.depth === 0 ? ' root-n' : ''));
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', n.x); text.setAttribute('y', n.y + 5);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('class', 'tree-node-text');
+            text.textContent = n.value;
+
+            g.appendChild(circle); g.appendChild(text);
+            svg.appendChild(g);
+
+            // Register in nodeMap for traversal animation
+            nodeMap[n.value] = { circle, text };
+        });
+    }
+
+    // ── Init ──
+    const style = document.createElement('style');
+    style.textContent = `@keyframes nodeIn { from{transform-origin:center;transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }`;
+    document.head.appendChild(style);
+
+    (async () => {
+        try {
+            const data = await callApi(`${BASE}/state`, 'GET');
+            render(data);
+        } catch {
+            showMsg('Cannot reach server. Is Spring Boot running on :8080?', 'error');
+        }
+    })();
+</script>
+</body>
+</html>
