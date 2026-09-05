@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.annotation.SessionScope;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -75,7 +74,7 @@ public class LinkedListServiceImpl implements LinkedListService {
         int pointer = 1;
         Node temp = head;
 
-        while (pointer<position){
+        while (pointer<position-1){
             temp = temp.next;
             pointer++;
         }
@@ -205,18 +204,16 @@ public class LinkedListServiceImpl implements LinkedListService {
 
         int pointer = 1;
         Node temp = head;
-        Node pre = null;
 
-        while (pointer<=position){
-            pre = temp;
+        while (pointer<position-1){
             temp = temp.next;
             pointer++;
         }
 
-        pre.next = temp.next;
-        if(temp.next == null){
-            tail = pre;
+        if(temp.next.next == null){
+            tail = temp;
         }
+        temp.next = temp.next.next;
         size--;
 
         return buildResponse("Deleted Element!");
@@ -235,6 +232,10 @@ public class LinkedListServiceImpl implements LinkedListService {
         Node next = null;
         Node pre = null;
 
+        if(head == null || size == 1){
+            return buildResponse("Operation not applicable!");
+        }
+
         while (current!=null){
             next = current.next;
             current.next = pre;
@@ -242,8 +243,8 @@ public class LinkedListServiceImpl implements LinkedListService {
             current = next;
         }
 
+        tail = head;
         head = pre;
-        tail = current;
         
         return buildResponse("LinkedList revereed!");
     }
@@ -251,13 +252,15 @@ public class LinkedListServiceImpl implements LinkedListService {
     @Override
     public LinkedListResponse getState() {
         // TODO: traverse from head, collect values into list, return response
-        return null;
+        return buildResponse("Current state of List!");
     }
 
     @Override
     public LinkedListResponse clear() {
         // TODO: set head = null, tail = null, size = 0
-        return null;
+       head = tail = null;
+       size = 0;
+       return buildResponse("List cleared!");
     }
 
     // -------------------------------------------------------------------------
@@ -267,6 +270,24 @@ public class LinkedListServiceImpl implements LinkedListService {
     @Override
     public boolean contains(int value) {
         // TODO: traverse from head, return true if value found
+
+        if(head == null){
+            return false;
+        }
+
+        if(size == 1){
+            return head.value == value;
+        }
+
+        Node temp = head;
+
+        while (temp!=null){
+            if(temp.value == value){
+                return true;
+            }
+            temp = temp.next;
+        }
+
         return false;
     }
 

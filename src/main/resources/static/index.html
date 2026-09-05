@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DS Visualizer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            background: #1a1d27;
+            border-bottom: 1px solid #2e3247;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        header h1 { font-size: 1.1rem; font-weight: 600; color: #c9d1ff; }
+        .badge {
+            background: #2e3a6e;
+            color: #8899ff;
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-weight: 600;
+        }
+        .quick-fill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .quick-fill span { font-size: 0.72rem; color: #5a6080; }
+        .qbtn {
+            border: 1px solid #2e3247;
+            background: #1a1d27;
+            color: #8899ff;
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .qbtn:hover { background: #2e3a6e; border-color: #5c6bc0; color: #c9d1ff; }
+
+        /* ── Layout ── */
+        .layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            height: calc(100vh - 49px);
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 240px;
+            min-width: 240px;
+            background: #1a1d27;
+            border-right: 1px solid #2e3247;
+            padding: 14px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* Op Card */
+        .op-card {
+            border: 1px solid #2e3247;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .op-card-header {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 6px 10px;
+            border-bottom: 1px solid #2e3247;
+        }
+        .op-card-body { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+
+        /* Color themes per card */
+        .card-insert .op-card-header { background: #0d2016; color: #4ade80; }
+        .card-delete .op-card-header { background: #200d0d; color: #f87171; }
+        .card-ops    .op-card-header { background: #1e1a09; color: #facc15; }
+        .card-search .op-card-header { background: #0d1420; color: #60a5fa; }
+
+        .card-insert { border-color: #1e4d2b; }
+        .card-delete { border-color: #4d1e1e; }
+        .card-ops    { border-color: #4a4a1e; }
+        .card-search { border-color: #1e2e4d; }
+
+        /* Input group: label + input */
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .field label {
+            font-size: 0.65rem;
+            color: #5a6080;
+        }
+        input[type="number"] {
+            background: #0f1117;
+            border: 1px solid #2e3247;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 0.82rem;
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #5c6bc0;
+        }
+        input.error {
+            border-color: #f87171 !important;
+            animation: shake 0.3s ease;
+        }
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25%      { transform: translateX(-5px); }
+            75%      { transform: translateX(5px); }
+        }
+        input::placeholder { color: #3a4060; }
+
+        .btn {
+            width: 100%;
+            padding: 7px 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.82; }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-insert { background: #1e4d2b; color: #4ade80; border: 1px solid #2d6b3e; }
+        .btn-delete { background: #4d1e1e; color: #f87171; border: 1px solid #6b2d2d; }
+        .btn-op     { background: #2e2e1e; color: #facc15; border: 1px solid #4a4a1e; }
+        .btn-search { background: #1e2e4d; color: #60a5fa; border: 1px solid #2d3e6b; }
+        .btn-danger { background: #4d1e3a; color: #f472b6; border: 1px solid #6b2d4e; }
+
+        .btn-row { display: flex; gap: 5px; }
+        .btn-row .btn { flex: 1; }
+
+        /* ── Main ── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            gap: 10px;
+            padding: 14px 24px 0;
+        }
+        .stat {
+            background: #1a1d27;
+            border: 1px solid #2e3247;
+            border-radius: 8px;
+            padding: 8px 18px;
+            text-align: center;
+            min-width: 70px;
+        }
+        .stat-val { font-size: 1.3rem; font-weight: 700; color: #8899ff; }
+        .stat-key { font-size: 0.65rem; color: #5a6080; margin-top: 1px; }
+
+        /* Message */
+        .msg-bar {
+            margin: 10px 24px 0;
+            background: #1a1d27;
+            border: 1px solid #2e3247;
+            border-left: 3px solid #5c6bc0;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            color: #a0a8d0;
+            transition: all 0.25s;
+        }
+        .msg-bar.success { border-left-color: #4ade80; color: #4ade80; background: #0d2016; }
+        .msg-bar.error   { border-left-color: #f87171; color: #f87171; background: #200d0d; }
+        .msg-bar.info    { border-left-color: #60a5fa; color: #60a5fa; background: #0d1420; }
+
+        /* ── Visualization ── */
+        .viz-area {
+            flex: 1;
+            padding: 20px 24px 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ll-scroll {
+            overflow-x: auto;
+            padding: 24px 4px 10px;
+        }
+
+        .ll-track {
+            display: flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 0;
+            min-height: 100px;
+        }
+
+        .ll-empty {
+            color: #3a4060;
+            font-size: 0.85rem;
+            font-style: italic;
+            padding: 36px 20px;
+            text-align: center;
+            width: 100%;
+            border: 1px dashed #2e3247;
+            border-radius: 10px;
+        }
+
+        /* Node */
+        .node-wrap {
+            display: flex;
+            align-items: center;
+            animation: nodeIn 0.3s ease;
+        }
+        @keyframes nodeIn {
+            from { transform: scale(0.6) translateY(-16px); opacity: 0; }
+            to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .node { display: flex; flex-direction: column; }
+
+        .node-badge {
+            font-size: 0.58rem;
+            text-align: center;
+            height: 14px;
+            margin-bottom: 3px;
+            font-weight: 700;
+        }
+        .node-badge.head { color: #4ade80; }
+        .node-badge.tail { color: #f87171; }
+        .node-badge.both { color: #facc15; }
+
+        .node-box {
+            display: flex;
+            border: 1.5px solid #3a3f60;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #1e2236;
+            min-width: 72px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .node-box.found {
+            border-color: #4ade80;
+            background: #0d2016;
+        }
+        .node-box.found .node-val { color: #4ade80; }
+
+        .node-val {
+            flex: 1;
+            text-align: center;
+            padding: 12px 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #c9d1ff;
+            border-right: 1.5px solid #3a3f60;
+        }
+        .node-ptr {
+            width: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: #3a4060;
+        }
+
+        .arrow {
+            display: flex;
+            align-items: center;
+            padding: 0 2px;
+            margin-top: 17px; /* align with node box (badge above = 17px offset) */
+        }
+
+        .null-node {
+            border: 1.5px dashed #2e3247;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #2e3247;
+            font-size: 0.72rem;
+            font-style: italic;
+            margin-top: 17px;
+            margin-left: 2px;
+        }
+
+        .pos-row {
+            display: flex;
+            padding-left: 4px;
+            margin-top: 3px;
+        }
+        .pos-label {
+            min-width: 72px;
+            text-align: center;
+            font-size: 0.6rem;
+            color: #2e3a50;
+        }
+        .pos-spacer { width: 28px; }
+
+        /* ── History ── */
+        .history-panel {
+            border-top: 1px solid #2e3247;
+            padding: 0 24px;
+            max-height: 140px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .history-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .history-header span {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #5a6080;
+        }
+        .history-toggle {
+            font-size: 0.65rem;
+            color: #3a4060;
+        }
+        .history-list {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding-bottom: 8px;
+        }
+        .history-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            font-size: 0.75rem;
+            animation: fadeIn 0.2s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .history-time { color: #3a4060; font-size: 0.65rem; min-width: 42px; }
+        .history-dot  { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 1px; }
+        .history-dot.success { background: #4ade80; }
+        .history-dot.error   { background: #f87171; }
+        .history-dot.info    { background: #60a5fa; }
+        .history-text { color: #a0a8d0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <h1>DS Visualizer</h1>
+        <span class="badge">Linked List</span>
+    </div>
+    <div class="quick-fill">
+        <span>Quick fill:</span>
+        <button class="qbtn" onclick="quickFill([1,2,3,4,5])">1 – 5</button>
+        <button class="qbtn" onclick="quickFill([10,20,30,40,50])">10 – 50</button>
+        <button class="qbtn" onclick="quickFillRandom()">Random ×5</button>
+        <button class="qbtn" style="color:#f87171;border-color:#4d1e1e;" onclick="api('clear')">Clear</button>
+    </div>
+</header>
+
+<div class="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+        <!-- INSERT -->
+        <div class="op-card card-insert">
+            <div class="op-card-header">Insert</div>
+            <div class="op-card-body">
+                <div class="field">
+                    <label>Value</label>
+                    <input id="inp-val" type="number" placeholder="e.g. 42" onkeydown="enterKey(event,'insertEnd')">
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-insert" onclick="api('insertEnd')" title="Insert at end">At End</button>
+                    <button class="btn btn-insert" onclick="api('insertBeginning')" title="Insert at beginning">At Start</button>
+                </div>
+                <div class="field">
+                    <label>Position (1-based)</label>
+                    <input id="inp-pos" type="number" placeholder="e.g. 2" min="1" onkeydown="enterKey(event,'insertPosition')">
+                </div>
+                <button class="btn btn-insert" onclick="api('insertPosition')">Insert at Position</button>
+            </div>
+        </div>
+
+        <!-- DELETE -->
+        <div class="op-card card-delete">
+            <div class="op-card-header">Delete</div>
+            <div class="op-card-body">
+                <div class="btn-row">
+                    <button class="btn btn-delete" onclick="api('deleteEnd')">At End</button>
+                    <button class="btn btn-delete" onclick="api('deleteBeginning')">At Start</button>
+                </div>
+                <div class="field">
+                    <label>By Value</label>
+                    <input id="del-val" type="number" placeholder="e.g. 42" onkeydown="enterKey(event,'deleteValue')">
+                </div>
+                <button class="btn btn-delete" onclick="api('deleteValue')">Delete by Value</button>
+                <div class="field">
+                    <label>By Position (1-based)</label>
+                    <input id="del-pos" type="number" placeholder="e.g. 2" min="1" onkeydown="enterKey(event,'deletePosition')">
+                </div>
+                <button class="btn btn-delete" onclick="api('deletePosition')">Delete at Position</button>
+            </div>
+        </div>
+
+        <!-- OPERATIONS -->
+        <div class="op-card card-ops">
+            <div class="op-card-header">Operations</div>
+            <div class="op-card-body">
+                <button class="btn btn-op" onclick="api('reverse')">⇄ Reverse</button>
+            </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="op-card card-search">
+            <div class="op-card-header">Search</div>
+            <div class="op-card-body">
+                <div class="field">
+                    <label>Value</label>
+                    <input id="search-val" type="number" placeholder="e.g. 42" onkeydown="enterKey(event,'contains')">
+                </div>
+                <button class="btn btn-search" onclick="api('contains')">Contains?</button>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="main">
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-val" id="stat-size">0</div>
+                <div class="stat-key">Size</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-head">—</div>
+                <div class="stat-key">Head</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val" id="stat-tail">—</div>
+                <div class="stat-key">Tail</div>
+            </div>
+        </div>
+
+        <div class="msg-bar" id="msg-bar">Ready — use the controls or quick-fill to get started.</div>
+
+        <div class="viz-area">
+            <div class="ll-scroll">
+                <div class="ll-track" id="ll-track">
+                    <div class="ll-empty">List is empty — insert a value or use Quick Fill.</div>
+                </div>
+            </div>
+            <div class="pos-row" id="pos-row"></div>
+        </div>
+
+        <!-- History -->
+        <div class="history-panel">
+            <div class="history-header" onclick="toggleHistory()">
+                <span>Operation History</span>
+                <span class="history-toggle" id="hist-toggle">▲ hide</span>
+            </div>
+            <div class="history-list" id="history-list"></div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    const BASE = '/api/linkedlist';
+    let foundIndex = -1;
+    let historyOpen = true;
+
+    // ── Enter key support ──
+    function enterKey(e, action) {
+        if (e.key === 'Enter') api(action);
+    }
+
+    // ── Input helpers ──
+    function getInt(id, required = true) {
+        const el = document.getElementById(id);
+        const v = parseInt(el.value);
+        if (required && isNaN(v)) {
+            el.classList.add('error');
+            el.focus();
+            setTimeout(() => el.classList.remove('error'), 600);
+            throw new Error('missing');
+        }
+        return isNaN(v) ? null : v;
+    }
+
+    // ── Quick fill ──
+    async function quickFill(values) {
+        // Always clear first so quick fill is never additive
+        await callApi(`${BASE}/clear`, 'DELETE');
+        for (const v of values) {
+            await callApi(`${BASE}/insert/end`, 'POST', { value: v });
+        }
+        const data = await callApi(`${BASE}/state`, 'GET');
+        render(data, true);
+        showMsg(`Quick filled with [${values.join(', ')}]`, 'success');
+        addHistory(`Quick fill → [${values.join(', ')}]`, 'info');
+    }
+
+    async function quickFillRandom() {
+        const values = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90) + 10);
+        await quickFill(values);
+    }
+
+    // ── History ──
+    function addHistory(text, type) {
+        const list = document.getElementById('history-list');
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <span class="history-time">${time}</span>
+            <div class="history-dot ${type}"></div>
+            <span class="history-text">${text}</span>
+        `;
+        list.prepend(item);
+        // Keep last 20
+        while (list.children.length > 20) list.removeChild(list.lastChild);
+    }
+
+    function toggleHistory() {
+        historyOpen = !historyOpen;
+        const list = document.getElementById('history-list');
+        const toggle = document.getElementById('hist-toggle');
+        list.style.display = historyOpen ? '' : 'none';
+        toggle.textContent = historyOpen ? '▲ hide' : '▼ show';
+    }
+
+    // ── Message bar ──
+    function showMsg(text, type = 'info') {
+        const el = document.getElementById('msg-bar');
+        el.textContent = text;
+        el.className = 'msg-bar ' + type;
+    }
+
+    function msgType(msg) {
+        if (!msg) return 'info';
+        const m = msg.toLowerCase();
+        if (m.includes('invalid') || m.includes('empty') || m.includes('not found') || m.includes('not applic')) return 'error';
+        if (m.includes('found') || m.includes('deleted') || m.includes('added') || m.includes('insert') ||
+            m.includes('revers') || m.includes('clear') || m.includes('state')) return 'success';
+        return 'info';
+    }
+
+    // ── Core API call ──
+    async function callApi(url, method, body) {
+        const opts = { method, headers: {} };
+        if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        const res = await fetch(url, opts);
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
+        return res.json();
+    }
+
+    async function refreshState() {
+        const data = await callApi(`${BASE}/state`, 'GET');
+        render(data, false);
+    }
+
+    // ── Main dispatcher ──
+    async function api(action) {
+        foundIndex = -1;
+        try {
+            let data;
+            let histMsg;
+
+            switch (action) {
+                case 'insertEnd': {
+                    const v = getInt('inp-val');
+                    data = await callApi(`${BASE}/insert/end`, 'POST', { value: v });
+                    histMsg = `Insert ${v} at end`;
+                    break;
+                }
+                case 'insertBeginning': {
+                    const v = getInt('inp-val');
+                    data = await callApi(`${BASE}/insert/beginning`, 'POST', { value: v });
+                    histMsg = `Insert ${v} at beginning`;
+                    break;
+                }
+                case 'insertPosition': {
+                    const v = getInt('inp-val');
+                    const p = getInt('inp-pos');
+                    data = await callApi(`${BASE}/insert/position`, 'POST', { value: v, position: p });
+                    histMsg = `Insert ${v} at position ${p}`;
+                    break;
+                }
+                case 'deleteEnd':
+                    data = await callApi(`${BASE}/delete/end`, 'DELETE');
+                    histMsg = `Delete at end`;
+                    break;
+                case 'deleteBeginning':
+                    data = await callApi(`${BASE}/delete/beginning`, 'DELETE');
+                    histMsg = `Delete at beginning`;
+                    break;
+                case 'deleteValue': {
+                    const v = getInt('del-val');
+                    data = await callApi(`${BASE}/delete/value`, 'DELETE', { value: v });
+                    histMsg = `Delete by value ${v}`;
+                    break;
+                }
+                case 'deletePosition': {
+                    const p = getInt('del-pos');
+                    data = await callApi(`${BASE}/delete/position`, 'DELETE', { position: p });
+                    histMsg = `Delete at position ${p}`;
+                    break;
+                }
+                case 'reverse':
+                    data = await callApi(`${BASE}/reverse`, 'POST');
+                    histMsg = `Reverse`;
+                    break;
+                case 'clear':
+                    data = await callApi(`${BASE}/clear`, 'DELETE');
+                    histMsg = `Clear list`;
+                    break;
+                case 'contains': {
+                    const v = getInt('search-val');
+                    const found = await callApi(`${BASE}/contains/${v}`, 'GET');
+                    data = await callApi(`${BASE}/state`, 'GET');
+                    if (found) {
+                        foundIndex = data.values.indexOf(v);
+                        showMsg(`✓ Value ${v} found at position ${foundIndex + 1}`, 'success');
+                        addHistory(`Contains ${v} → found at position ${foundIndex + 1}`, 'success');
+                    } else {
+                        showMsg(`✗ Value ${v} not in the list`, 'error');
+                        addHistory(`Contains ${v} → not found`, 'error');
+                    }
+                    render(data, false);
+                    return;
+                }
+            }
+
+            const type = msgType(data.message);
+            showMsg(data.message, type);
+            addHistory(histMsg + ' → ' + data.message, type);
+            render(data, true);
+
+        } catch (e) {
+            if (e.message === 'missing') return; // input validation already showed error
+            showMsg('Cannot reach server. Is Spring Boot running on :8080?', 'error');
+        }
+    }
+
+    // ── Render ──
+    function render(data, animate) {
+        const values = data.values || [];
+        const size   = data.size   || 0;
+
+        document.getElementById('stat-size').textContent = size;
+        document.getElementById('stat-head').textContent = values.length ? values[0] : '—';
+        document.getElementById('stat-tail').textContent = values.length ? values[values.length - 1] : '—';
+
+        const track  = document.getElementById('ll-track');
+        const posRow = document.getElementById('pos-row');
+        track.innerHTML  = '';
+        posRow.innerHTML = '';
+
+        if (values.length === 0) {
+            track.innerHTML = '<div class="ll-empty">List is empty — insert a value or use Quick Fill.</div>';
+            return;
+        }
+
+        values.forEach((val, i) => {
+            const isHead  = i === 0;
+            const isTail  = i === values.length - 1;
+            const isFound = i === foundIndex;
+
+            let badgeClass = '', badgeText = ' ';
+            if (isHead && isTail) { badgeClass = 'both'; badgeText = 'HEAD / TAIL'; }
+            else if (isHead)      { badgeClass = 'head'; badgeText = 'HEAD'; }
+            else if (isTail)      { badgeClass = 'tail'; badgeText = 'TAIL'; }
+
+            const wrap = document.createElement('div');
+            wrap.className = 'node-wrap';
+            if (!animate) wrap.style.animation = 'none';
+
+            wrap.innerHTML = `
+                <div class="node">
+                    <div class="node-badge ${badgeClass}">${badgeText}</div>
+                    <div class="node-box${isFound ? ' found' : ''}">
+                        <div class="node-val">${val}</div>
+                        <div class="node-ptr">→</div>
+                    </div>
+                </div>
+            `;
+            track.appendChild(wrap);
+
+            if (i < values.length - 1) {
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                arrow.innerHTML = `<svg width="28" height="20" viewBox="0 0 28 20">
+                    <line x1="2" y1="10" x2="20" y2="10" stroke="#3a4060" stroke-width="1.5"/>
+                    <polyline points="15,5 21,10 15,15" fill="none" stroke="#3a4060" stroke-width="1.5"/>
+                </svg>`;
+                track.appendChild(arrow);
+            }
+
+            // Position label
+            const pl = document.createElement('div');
+            pl.className = 'pos-label';
+            pl.textContent = i + 1;
+            posRow.appendChild(pl);
+            if (i < values.length - 1) {
+                const sp = document.createElement('div');
+                sp.className = 'pos-spacer';
+                posRow.appendChild(sp);
+            }
+        });
+
+        // NULL terminator
+        const nullEl = document.createElement('div');
+        nullEl.className = 'null-node';
+        nullEl.textContent = 'NULL';
+        track.appendChild(nullEl);
+    }
+
+    // Load on start
+    (async () => {
+        try {
+            await refreshState();
+            showMsg('Ready — use the controls or Quick Fill to get started.', 'info');
+        } catch {
+            showMsg('Cannot reach server. Is Spring Boot running on :8080?', 'error');
+        }
+    })();
+</script>
+</body>
+</html>
